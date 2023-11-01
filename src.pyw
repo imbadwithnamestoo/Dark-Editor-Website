@@ -1,96 +1,136 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dark Editor - Your Text Editing Solution</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #333;
-            color: #fff;
-            margin: 0;
-            padding: 0;
-        }
+import sys
+from PyQt5.QtWidgets import QApplication, QMainWindow, QTextEdit, QAction, QFileDialog, QVBoxLayout, QLabel, QWidget, QPushButton, QHBoxLayout
+from PyQt5.QtGui import QPalette, QColor, QIcon
+from PyQt5.QtCore import Qt
 
-        header {
-            background-color: #222;
-            text-align: center;
-            padding: 20px 0;
-        }
+class CustomTitleBar(QWidget):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.parent = parent
+        self.layout = QHBoxLayout()
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(self.layout)
+        self.setAutoFillBackground(True)
+        self.setPalette(QPalette(QColor(53, 53, 53)))
+        self.setFixedHeight(30)
 
-        h1 {
-            font-size: 36px;
-            margin: 0;
-        }
+        title_label = QLabel("Dark Editor", self)
+        title_label.setStyleSheet("color: white; font-size: 14px; padding: 5px;")
 
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #444;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-        }
+        close_button = QPushButton("X", self)
+        close_button.setStyleSheet("background-color: gray; color: white; border: none; font-size: 18px; padding: 5px; min-width: 30px;")
+        close_button.clicked.connect(self.closeApplication)
 
-        .btn {
-            display: inline-block;
-            background-color: #555;
-            color: #fff;
-            padding: 12px 24px;
-            text-decoration: none;
-            border: none;
-            cursor: pointer;
-            border-radius: 5px;
-            transition: background-color 0.2s;
-            margin-right: 10px;
-        }
+        self.layout.addWidget(title_label)
+        self.layout.addStretch(1)
+        self.layout.addWidget(close_button)
 
-        .btn:hover {
-            background-color: #666;
-        }
+        self.drag_position = None
 
-        p {
-            margin: 15px 0;
-        }
+    def closeApplication(self):
+        self.parent.close()
 
-        ul {
-            list-style-type: disc;
-            margin-left: 20px;
-        }
 
-        @media (max-width: 600px) {
-            h1 {
-                font-size: 28px;
-            }
-            .btn {
-                padding: 10px 20px;
-                font-size: 16px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <header>
-        <h1>Dark Editor</h1>
-        <p>You dont need this</p>
-    </header>
-    <div class="container">
-        <p>Dark editor is something I made while I was bored</p>
-        <p>Key Features:</p>
-        <ul>
-            <li>Simple interface</li>
-            <li>Easy editing</li>
-            <li>Can save too cuz its so advanced omg</li>
-        </ul>
-        <p>Try this if u hate notepad for some reason</p>
+    def closeApplication(self):
+        self.parent.close()
 
-        <!-- Download button -->
-        <a href="DarkEditor.zip" class="btn">Download Zip</a>
 
-        <!-- View Source Code button -->
-        <a href="https://raw.githubusercontent.com/imbadwithnamestoo/Dark-Editor-Website/main/src.pyw" class="btn">View Source Code</a>
 
-    </div>
-</body>
-</html>
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.drag_position = event.globalPos() - self.parent.frameGeometry().topLeft()
+            event.accept()
+
+    def mouseMoveEvent(self, event):
+        if event.buttons() == Qt.LeftButton:
+            self.parent.move(event.globalPos() - self.drag_position)
+            event.accept()
+
+    def mouseDoubleClickEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            if self.parent.isMaximized():
+                self.parent.showNormal()
+            else:
+                self.parent.showMaximized()
+            event.accept()
+
+class TextEditor(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowTitle("Dark Editor")
+        self.setWindowFlags(Qt.FramelessWindowHint)
+        self.setGeometry(100, 100, 800, 600)
+
+        icon_path = 'assets/logo.png'
+        app_icon = QIcon(icon_path)
+
+        self.setWindowIcon(app_icon)
+
+        self.title_bar = CustomTitleBar(self)
+        self.setMenuWidget(self.title_bar)
+
+        toolbar = self.addToolBar('File')
+
+        save_action = QAction('Save', self)
+        save_action.triggered.connect(self.saveText)
+        toolbar.addAction(save_action)
+
+        open_action = QAction('Open', self)
+        open_action.triggered.connect(self.openText)
+        toolbar.addAction(open_action)
+
+        self.text_edit = QTextEdit()
+        self.setCentralWidget(self.text_edit)
+
+    def saveText(self):
+        options = QFileDialog.Options()
+        options |= QFileDialog.ReadOnly
+        filePath, _ = QFileDialog.getSaveFileName(self, 'Save File', '', 'IMB Files (*.imb);;Text Files (*.txt);;All Files (*)', options=options)
+
+        if filePath:
+            if not filePath.endswith('.txt'):
+                filePath += '.txt'
+            with open(filePath, 'w') as file:
+                text = self.text_edit.toPlainText()
+                file.write(text)
+
+    def openText(self):
+        options = QFileDialog.Options()
+        options |= QFileDialog.ReadOnly
+        filePath, _ = QFileDialog.getOpenFileName(self, 'Open File', '', 'IMB Files (*.imb);;Text Files (*.txt);;All Files (*)', options=options)
+
+        if filePath:
+            with open(filePath, 'r') as file:
+                text = file.read()
+                self.text_edit.setPlainText(text)
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    app.setStyle('Fusion')
+
+    dark_palette = QPalette()
+    dark_palette.setColor(QPalette.Window, QColor(53, 53, 53))
+    dark_palette.setColor(QPalette.WindowText, QColor(255, 255, 255))
+    dark_palette.setColor(QPalette.Base, QColor(25, 25, 25))
+    dark_palette.setColor(QPalette.AlternateBase, QColor(53, 53, 53))
+    dark_palette.setColor(QPalette.ToolTipBase, QColor(255, 255, 255))
+    dark_palette.setColor(QPalette.ToolTipText, QColor(255, 255, 255))
+    dark_palette.setColor(QPalette.Text, QColor(255, 255, 255))
+    dark_palette.setColor(QPalette.Button, QColor(53, 53, 53))
+    dark_palette.setColor(QPalette.ButtonText, QColor(255, 255, 255))
+    dark_palette.setColor(QPalette.BrightText, QColor(255, 0, 0))
+    dark_palette.setColor(QPalette.Link, QColor(42, 130, 218))
+    dark_palette.setColor(QPalette.Highlight, QColor(42, 130, 218))
+    dark_palette.setColor(QPalette.HighlightedText, QColor(0, 0, 0))
+
+    app.setPalette(dark_palette)
+
+    editor = TextEditor()
+    editor.show()
+
+    sys.exit(app.exec_())
+
+    # Omg its open source too crazy

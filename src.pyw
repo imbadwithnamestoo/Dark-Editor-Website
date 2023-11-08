@@ -1,7 +1,8 @@
 import sys
+import webbrowser  # Import the webbrowser module
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTextEdit, QAction, QFileDialog, QVBoxLayout, QLabel, QWidget, QPushButton, QHBoxLayout
 from PyQt5.QtGui import QPalette, QColor, QIcon
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QUrl
 
 class CustomTitleBar(QWidget):
     def __init__(self, parent):
@@ -29,12 +30,6 @@ class CustomTitleBar(QWidget):
 
     def closeApplication(self):
         self.parent.close()
-
-
-    def closeApplication(self):
-        self.parent.close()
-
-
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -82,6 +77,10 @@ class TextEditor(QMainWindow):
         open_action.triggered.connect(self.openText)
         toolbar.addAction(open_action)
 
+        website_action = QAction('Website', self)
+        website_action.triggered.connect(self.openWebsite)
+        toolbar.addAction(website_action)
+
         self.text_edit = QTextEdit()
         self.setCentralWidget(self.text_edit)
 
@@ -106,6 +105,10 @@ class TextEditor(QMainWindow):
             with open(filePath, 'r') as file:
                 text = file.read()
                 self.text_edit.setPlainText(text)
+
+    def openWebsite(self):
+        website_url = 'https://imbadwithnamestoo.github.io/Dark-Editor-Website/'
+        webbrowser.open(website_url)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
@@ -132,5 +135,3 @@ if __name__ == '__main__':
     editor.show()
 
     sys.exit(app.exec_())
-
-    # Omg its open source too crazy
